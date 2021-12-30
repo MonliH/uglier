@@ -78,6 +78,17 @@ def DRAWMANDELBROT(XХXX, ХХХХ, XХХХ, XXXХ, XХХX='.,-:;i+hHM$*#@ '):
 
 ```bash
 $ uglier --help
+usage: uglier [-h] [-v] [-y] sources [sources ...]
+
+Make your python code a (working) repulsive mess!
+
+positional arguments:
+  sources        files to uglify
+
+optional arguments:
+  -h, --help     show this help message and exit
+  -v, --verbose  enable verbose logging
+  -y, --yolo     overwrite the original file(s)
 ```
 
 ## How??
