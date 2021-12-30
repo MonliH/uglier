@@ -193,7 +193,7 @@ class Patcher(ast.NodeTransformer):
         new_file = ""
         for line in split_file:
             new_file += line
-            new_file += "\n" * random.randint(1, 2)
+            new_file += "\n" * random.randint(1, 3)
 
         if self.opts.yolo:
             logger.log(logging.INFO, f"Patched {file}")
