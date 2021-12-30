@@ -70,7 +70,7 @@ class Patcher(ast.NodeTransformer):
         if original is not None:
             quacked = original
             new = quacked
-            if modify_name and quacked not in BUILTINS:
+            if modify_name and (original not in BUILTINS):
                 new = ""
                 for char in quacked:
                     if random.random() < 0.01:
@@ -83,7 +83,7 @@ class Patcher(ast.NodeTransformer):
                 new = new.replace(match, random_alternative)
 
             final = new
-            if modify_name and new not in BUILTINS:
+            if modify_name and (original not in BUILTINS):
                 final = ""
                 for char in new:
                     if random.random() < 0.07:
@@ -104,7 +104,7 @@ class Patcher(ast.NodeTransformer):
     def patch_paths(self, paths: List[str]):
         for file in paths:
             if path.isdir(file):
-                for root, dirs, files in os.walk(file):
+                for root, _, files in os.walk(file):
                     for file in files:
                         self.patch_file(path.join(root, file))
             else:

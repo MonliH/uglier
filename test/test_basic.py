@@ -2,11 +2,9 @@ def add_values(n1, n2):
     return n1 + n2
 
 
-def add_input_to_n(n):
-    user_input = int(input("Enter a number: "))
-    return add_values(user_input, n)
+def add_10_to_string(n):
+    return str(add_values(int(n), 10))
 
 
-user_added_10 = add_input_to_n(10)
-print(user_added_10)
-
+num = add_10_to_string("10")
+print(num)
