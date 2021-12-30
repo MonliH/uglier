@@ -12,11 +12,11 @@ import logging
 logger = logging.getLogger("uglier")
 
 
-with open(path.join(path.dirname(__file__), "characters.txt"), "r") as f:
-    CHARACTERS = defaultdict(list)
-    for character in f.read():
-        normalised = unicodedata.normalize("NFKC", character)
-        CHARACTERS[normalised].append(character)
+character_list = "𝕺𝔒𝓘𝕴ℓ𝔩𝕝𝔄𝕬ℬ𝓑𝔹𝕭ℭ𝕮𝔇𝕯Ǳǲ𝕰𝔈𝔉𝕱𝔊𝕳ℌⅡⅢĲⅣⅨ𝕵𝔍𝕶𝔎𝕷𝔏Ǉǈ𝕸𝔐𝕹𝔑Ǌǋ𝕻𝔓𝕼𝔔ℜ𝕽𝕾𝔖𝕿𝔗𝓤𝕌𝖁𝔙ⅥⅦⅧ𝖂𝔚𝔛𝓧ⅪⅫ𝔜𝖄𝖅ℨ𝕒𝒶𝒷𝓫𝒸𝓬𝔡ǳ𝔢𝔰𝕤𝖘𝒻𝓯ﬀﬃﬂᵍ𝓰𝔥𝒾𝓲ⅱⅲĳⅳⅸ𝒿𝖐ǉ𝓂𝕟ǌᵒ𝓅𝔮𝓇ﬆ𝑡𝓊𝓋ⅵⅶⅷ𝔀𝕩ⅺⅻ𝔶𝔷"
+CHARACTERS = defaultdict(list)
+for character in character_list:
+    normalised = unicodedata.normalize("NFKC", character)
+    CHARACTERS[normalised].append(character)
 
 CHARACTERS.default_factory = None
 SORTED_MATCH = sorted(CHARACTERS.keys(), key=len, reverse=True)
