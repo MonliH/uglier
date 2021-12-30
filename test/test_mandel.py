@@ -1,4 +1,4 @@
-def draw_mandelbrot(maxX, minX, height, width, chars=" .,-:;i+hHM$*#@ "):
+def draw_mandelbrot(maxX, minX, height, width, chars=".,-:;i+hHM$*#@ "):
     aspectRatio = width / height
     yScale = (maxX - minX) * (float(height) / width) * aspectRatio
 
@@ -17,4 +17,4 @@ def draw_mandelbrot(maxX, minX, height, width, chars=" .,-:;i+hHM$*#@ "):
         print(line)
 
 
-draw_mandelbrot(-2.0, 1, 78, 36)
+draw_mandelbrot(-2.0, 1, 36, 78)
