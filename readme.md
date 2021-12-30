@@ -35,7 +35,7 @@ draw_mandelbrot(-2.0, 1, 36, 78)
 ```
 
 After:
-```python
+```
 def DRAWMANDELBROT(XХXX, ХХХХ, XХХХ, XXXХ, XХХX='.,-:;i+hHM$*#@ '):
 
     ХXXХ = XXXХ / XХХХ
