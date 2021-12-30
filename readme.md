@@ -69,6 +69,17 @@ def DRAWMANDELBROT(XХXX, ХХХХ, XХХХ, XXXХ, XХХX='.,-:;i+hHM$*#@ '):
 
 (It *still* works!)
 
+## Installation
+
+* You **need** python 3.9 or higher
+* Then, simply `pip install uglier`
+
+## Usage
+
+```bash
+$ uglier --help
+```
+
 ## How??
 
 This takes advantage of python's [unicode normalization](https://www.python.org/dev/peps/pep-3131/). To make all the identifiers look the same, it uses a mix of latin and cryllic characters.

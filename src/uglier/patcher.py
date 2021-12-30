@@ -1,7 +1,7 @@
 import argparse
 import ast
 import os
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Set, Tuple
 import unicodedata
 from os import path
 from collections import defaultdict
