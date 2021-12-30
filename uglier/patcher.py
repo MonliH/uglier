@@ -22,6 +22,11 @@ CHARACTERS.default_factory = None
 SORTED_MATCH = sorted(CHARACTERS.keys(), key=len, reverse=True)
 BUILTINS = set(dir(builtins))
 
+latin = "ABEMHOPCTXaeopcyx"
+cryllic = "АВЕМНОРСТХаеорсух"
+latin_to_cyrillic = dict(zip(latin, cryllic))
+cryllic_to_latin = dict(zip(cryllic, latin))
+
 
 def random_casing(s: str) -> str:
     return "".join(random.choice([str.lower, str.upper])(c) for c in s)
@@ -29,77 +34,122 @@ def random_casing(s: str) -> str:
 
 class Patcher(ast.NodeTransformer):
     def __init__(self, opts: argparse.Namespace):
-        # Map old ident names to new NORMALIZED ident names (with random underscores)
+        # Map old ident names to new ident names
         self.mapping: Dict[str, str] = {}
 
         # Set of all mapped ident names (non-normalized)
         self.mapped_idents: Set[str] = set()
-
         self.opts = opts
+
+        # Map old function names to new function names (normalized)
+        self.function_names: Dict[str, str] = {}
 
     def visit_Name(self, node):
         new_name = self.modify_name(node.id)
         return ast.Name(id=new_name, ctx=node.ctx)
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_Attribute(self, node: ast.Attribute):
+        return ast.Attribute(
+            value=self.generic_visit(node.value),
+            attr=self.modify_name(node.attr),
+            ctx=node.ctx,
+        )
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef):
+        return self.visit_FunctionDef(node)
+
+    def visit_ClassDef(self, node: ast.ClassDef):
         new_node = super().generic_visit(node)
 
-        new_name = self.modify_name(new_node.name)
-        new_node.name = new_name
+        new_fn_name = self.random_name()
+        self.function_names[new_node.name] = new_fn_name
+        new_node.name = new_fn_name
+
+        return new_node
+
+    def visit_FunctionDef(self, node: ast.FunctionDef):
+        self.function_id = random.choice(latin) * 8
+        self.mapped_idents.add(self.function_id)
+
+        new_node = super().generic_visit(node)
+
+        new_fn_name = (
+            self.random_name()
+            if self.safe_to_modify(new_node.name)
+            else self.generate_ident(new_node.name)
+        )
+        self.function_names[new_node.name] = new_fn_name
+        new_node.name = new_fn_name
 
         for i in range(len(new_node.args.args)):
             pos_arg_name = new_node.args.args[i].arg
             new_node.args.args[i].arg = self.modify_name(pos_arg_name)
 
+        if new_node.args.kwonlyargs is not None:
+            for i in range(len(new_node.args.kwonlyargs)):
+                pos_arg_name = new_node.args.kwonlyargs[i].arg
+                new_node.args.kwonlyargs[i].arg = self.modify_name(pos_arg_name)
+
         return new_node
 
-    def modify_name(self, name: str) -> str:
-        if name in self.mapping:
-            new_name, normalised = self.generate_ident(False, self.mapping[name])
-        else:
-            new_name, normalised = self.generate_ident(True, name)
-        self.mapping[name] = normalised
+    def random_name(self) -> str:
+        terms = ["SQUEAK", "HONK", "GROWL", "BARK", "MEOW"]
+        random.shuffle(terms)
+        new = "_".join(terms[: random.randint(1, len(terms))])
+        while new in self.mapped_idents:
+            random.shuffle(terms)
+            new = "_".join(terms[: random.randint(1, len(terms))])
+
+        return new
+
+    def modify_name(self, name: str, cryllic: bool = True) -> str:
+        new_name = self.generate_ident(name, cryllic)
+        self.mapping[name] = new_name
         self.mapped_idents.add(new_name)
+
         return new_name
+
+    @staticmethod
+    def safe_to_modify(original: str) -> bool:
+        return (original not in BUILTINS) and not (
+            (original[0:2] == "__" and original[-2:] == "__")
+            if len(original) > 4
+            else False
+        )
 
     def generate_ident(
         self,
-        modify_name: bool,
-        original: Optional[str] = None,
+        original: str,
+        cryllic: bool = True,
     ) -> Tuple[str, str]:
-        if original is not None:
-            quacked = original
-            new = quacked
-            if modify_name and (original not in BUILTINS):
-                new = ""
-                for char in quacked:
-                    if random.random() < 0.01:
-                        new += "quack"
-                    new += char
-                new = random_casing(new)
+        safe_to_modify = self.safe_to_modify(original)
 
+        if not safe_to_modify or not cryllic:
+            new = original
             for match in SORTED_MATCH:
                 random_alternative = random.choice(CHARACTERS[match])
                 new = new.replace(match, random_alternative)
-
             final = new
-            if modify_name and (original not in BUILTINS):
-                final = ""
-                for char in new:
-                    if random.random() < 0.07:
-                        final += "_" * random.randint(2, 4)
-                    final += char
-
-                while final in self.mapped_idents or final in self.mapping:
-                    final += "_"
-
-            return (final, unicodedata.normalize("NFKC", final))
         else:
-            ident = "_"
-            while (ident in self.mapping) or (ident in self.mapped_idents):
-                ident += "_"
+            if original in self.mapping:
+                final = self.mapping[original]
+            elif original in self.function_names:
+                new = self.function_names[original]
+                for match in SORTED_MATCH:
+                    random_alternative = random.choice(CHARACTERS[match])
+                    new = new.replace(match, random_alternative)
+                final = new
+            else:
+                final = "".join(
+                    random.choice([latin_to_cyrillic[c], c]) for c in self.function_id
+                )
+                while final in self.mapped_idents:
+                    final = "".join(
+                        random.choice([latin_to_cyrillic[c], c])
+                        for c in self.function_id
+                    )
 
-            return (ident, ident)
+        return final
 
     def patch_paths(self, paths: List[str]):
         for file in paths:
@@ -122,3 +172,4 @@ class Patcher(ast.NodeTransformer):
         new_ast = ast.fix_missing_locations(new_ast)
 
         print(ast.unparse(new_ast))
+        logger.log(logging.INFO, f"Patched {file}")
