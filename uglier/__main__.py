@@ -43,7 +43,9 @@ parser = ArgumentParser()
 parser.add_argument(
     "-v", "--verbose", action="store_true", help="enable verbose logging"
 )
-parser.add_argument("yolo", action="store_true", help="overwrite the original file(s)")
+parser.add_argument(
+    "-y", "--yolo", action="store_true", help="overwrite the original file(s)"
+)
 
 opts, paths = parser.parse_known_intermixed_args()
 

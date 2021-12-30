@@ -49,7 +49,7 @@ class Patcher(ast.NodeTransformer):
     def visit_Name(self, node):
         new_name = self.modify_name(node.id)
         if isinstance(node.ctx, ast.Store):
-            new_name = "\u202E" + new_name + "\u202C"
+            new_name = new_name
         return ast.Name(id=new_name, ctx=node.ctx)
 
     def visit_Attribute(self, node: ast.Attribute):
@@ -180,14 +180,25 @@ class Patcher(ast.NodeTransformer):
         with open(file, "r") as f:
             try:
                 file_ast = ast.parse(f.read())
-            except SyntaxError:
+            except SyntaxError as e:
                 logger.log(
-                    logging.ERROR, f"Failed to parse file (syntax error): {file}"
+                    logging.ERROR, f"Failed to parse file (syntax error): {file}: {e}"
                 )
                 return
 
         new_ast = self.visit(file_ast)
         new_ast = ast.fix_missing_locations(new_ast)
 
-        print(ast.unparse(new_ast))
-        logger.log(logging.INFO, f"Patched {file}")
+        split_file = ast.unparse(new_ast).splitlines()
+        new_file = ""
+        for line in split_file:
+            new_file += line
+            new_file += "\n" * random.randint(1, 2)
+
+        if self.opts.yolo:
+            logger.log(logging.INFO, f"Patched {file}")
+            with open(file, "w") as f:
+                f.write(new_file)
+        else:
+            print(f"--- {file} ---")
+            print(new_file)
