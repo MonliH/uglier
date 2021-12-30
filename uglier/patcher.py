@@ -43,9 +43,13 @@ class Patcher(ast.NodeTransformer):
 
         # Map old function names to new function names (normalized)
         self.function_names: Dict[str, str] = {}
+        self.function_id = random.choice(latin) * 4
+        self.mapped_idents.add(self.function_id)
 
     def visit_Name(self, node):
         new_name = self.modify_name(node.id)
+        if isinstance(node.ctx, ast.Store):
+            new_name = "\u202E" + new_name + "\u202C"
         return ast.Name(id=new_name, ctx=node.ctx)
 
     def visit_Attribute(self, node: ast.Attribute):
@@ -61,24 +65,25 @@ class Patcher(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef):
         new_node = super().generic_visit(node)
 
-        new_fn_name = self.random_name()
+        new_fn_name = self.random_name(new_node.name)
         self.function_names[new_node.name] = new_fn_name
+        self.mapped_idents.add(new_fn_name)
         new_node.name = new_fn_name
 
         return new_node
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
-        self.function_id = random.choice(latin) * 8
+        self.function_id = random.choice(latin) * 4
         self.mapped_idents.add(self.function_id)
-
         new_node = super().generic_visit(node)
 
         new_fn_name = (
-            self.random_name()
+            self.random_name(new_node.name)
             if self.safe_to_modify(new_node.name)
             else self.generate_ident(new_node.name)
         )
         self.function_names[new_node.name] = new_fn_name
+        self.mapped_idents.add(new_fn_name)
         new_node.name = new_fn_name
 
         for i in range(len(new_node.args.args)):
@@ -92,14 +97,10 @@ class Patcher(ast.NodeTransformer):
 
         return new_node
 
-    def random_name(self) -> str:
-        terms = ["SQUEAK", "HONK", "GROWL", "BARK", "MEOW"]
-        random.shuffle(terms)
-        new = "_".join(terms[: random.randint(1, len(terms))])
+    def random_name(self, old: str) -> str:
+        new = "".join(i for i in old.upper().replace("_", "") if not i.isdigit())
         while new in self.mapped_idents:
-            random.shuffle(terms)
-            new = "_".join(terms[: random.randint(1, len(terms))])
-
+            new += "_"
         return new
 
     def modify_name(self, name: str, cryllic: bool = True) -> str:
@@ -140,14 +141,25 @@ class Patcher(ast.NodeTransformer):
                     new = new.replace(match, random_alternative)
                 final = new
             else:
-                final = "".join(
-                    random.choice([latin_to_cyrillic[c], c]) for c in self.function_id
-                )
-                while final in self.mapped_idents:
+                while True:
                     final = "".join(
                         random.choice([latin_to_cyrillic[c], c])
                         for c in self.function_id
                     )
+                    iters = 0
+                    while (final in self.mapped_idents) and (
+                        iters < len(self.function_id) ** 2 * 2
+                    ):
+                        final = "".join(
+                            random.choice([latin_to_cyrillic[c], c])
+                            for c in self.function_id
+                        )
+                        iters += 1
+
+                    if final not in self.mapped_idents:
+                        return final
+
+                    self.function_id += self.function_id[0]
 
         return final
 
@@ -166,7 +178,13 @@ class Patcher(ast.NodeTransformer):
             return
 
         with open(file, "r") as f:
-            file_ast = ast.parse(f.read())
+            try:
+                file_ast = ast.parse(f.read())
+            except SyntaxError:
+                logger.log(
+                    logging.ERROR, f"Failed to parse file (syntax error): {file}"
+                )
+                return
 
         new_ast = self.visit(file_ast)
         new_ast = ast.fix_missing_locations(new_ast)
